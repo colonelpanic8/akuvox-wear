@@ -2,7 +2,8 @@
 set -euo pipefail
 
 readonly package_name="com.akuvox.mobile.smartplus"
-readonly project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly project_dir
 output_dir="${1:-$project_dir/vendor/installed-smartplus}"
 
 command -v adb >/dev/null || {

@@ -1,0 +1,4 @@
+Initial SmartPlus Wear bridge release based on SmartPlus 7.50.0003.
+
+Adds a paired Wear OS unlock button that uses the phone app's authenticated
+session and first compatible favorite door.

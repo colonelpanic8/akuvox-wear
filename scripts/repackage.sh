@@ -3,7 +3,8 @@ set -euo pipefail
 
 readonly original_package="com.akuvox.mobile.smartplus"
 readonly replacement_package="com.ivanmalison.akuvoxwear"
-readonly project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly project_dir
 
 usage() {
   echo "usage: $0 <SmartPlus.xapk|directory-of-installed-apks> [output-directory]" >&2
@@ -127,21 +128,46 @@ echo "Rebuilding SmartPlus with the Wear bridge"
 apktool b "$decoded_base" -o "$unsigned_apk"
 zipalign -f -p 4 "$unsigned_apk" "$aligned_apk"
 
-android_config_dir="${ANDROID_USER_HOME:-${HOME}/.android}"
-debug_keystore="$android_config_dir/debug.keystore"
-if [[ ! -f "$debug_keystore" ]]; then
-  echo "Gradle did not create the expected debug keystore at $debug_keystore" >&2
-  exit 1
+release_keystore="$work_dir/release.keystore"
+if [[ -n "${ANDROID_KEYSTORE_BASE64:-}" ]]; then
+  printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$release_keystore"
+  chmod 600 "$release_keystore"
+elif [[ -n "${ANDROID_KEYSTORE_FILE:-}" ]]; then
+  release_keystore="$(realpath "$ANDROID_KEYSTORE_FILE")"
+else
+  android_config_dir="${ANDROID_USER_HOME:-${HOME}/.android}"
+  release_keystore="$android_config_dir/debug.keystore"
+  : "${ANDROID_KEY_ALIAS:=androiddebugkey}"
+  : "${ANDROID_KEYSTORE_PASSWORD:=android}"
+  : "${ANDROID_KEY_PASSWORD:=android}"
 fi
 
+if [[ ! -f "$release_keystore" ]]; then
+  echo "signing keystore not found: $release_keystore" >&2
+  exit 1
+fi
+for signing_variable in ANDROID_KEY_ALIAS ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_PASSWORD; do
+  if [[ -z "${!signing_variable:-}" ]]; then
+    echo "release signing requires $signing_variable" >&2
+    exit 1
+  fi
+done
+export ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_PASSWORD
+
 apksigner sign \
-  --ks "$debug_keystore" \
-  --ks-key-alias androiddebugkey \
-  --ks-pass pass:android \
-  --key-pass pass:android \
+  --ks "$release_keystore" \
+  --ks-key-alias "$ANDROID_KEY_ALIAS" \
+  --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+  --key-pass env:ANDROID_KEY_PASSWORD \
   --out "$phone_apk" \
   "$aligned_apk"
-cp "$watch_apk" "$watch_output"
+apksigner sign \
+  --ks "$release_keystore" \
+  --ks-key-alias "$ANDROID_KEY_ALIAS" \
+  --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+  --key-pass env:ANDROID_KEY_PASSWORD \
+  --out "$watch_output" \
+  "$watch_apk"
 
 apksigner verify --verbose "$phone_apk" >/dev/null
 apksigner verify --verbose "$watch_output" >/dev/null

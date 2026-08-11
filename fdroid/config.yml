@@ -1,0 +1,21 @@
+# Configuration for the self-hosted SmartPlus Wear F-Droid repository.
+# `scripts/fdroid/build-repo.sh` downloads already-signed phone APKs from
+# GitHub releases and generates a signed binary repository for GitHub Pages.
+
+repo_url: https://colonelpanic8.github.io/akuvox-wear/fdroid/repo
+repo_name: SmartPlus Wear
+repo_icon: icon.png
+repo_description: >-
+  Repackaged Akuvox SmartPlus phone app with a paired Wear OS unlock bridge.
+  The repository contains the same signed phone APKs as GitHub Releases.
+
+archive_older: 0
+
+keystore: keystore.jks
+repo_keyalias: { env: FDROID_KEY_ALIAS }
+keystorepass: { env: FDROID_KEYSTORE_PASSWORD }
+keypass: { env: FDROID_KEY_PASSWORD }
+
+make_current_version_link: false
+Categories:
+  - Security

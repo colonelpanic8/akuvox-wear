@@ -37,6 +37,12 @@ Outputs:
 - `dist/smartplus-wear-phone.apk`
 - `dist/smartplus-wear-watch.apk`
 
+For public releases, set `ANDROID_KEYSTORE_FILE` (or
+`ANDROID_KEYSTORE_BASE64`), `ANDROID_KEY_ALIAS`,
+`ANDROID_KEYSTORE_PASSWORD`, and `ANDROID_KEY_PASSWORD`. Without those values,
+the script intentionally falls back to the local Android debug key for device
+testing only.
+
 The proprietary APK and generated decompilation are local build inputs and are deliberately excluded from Git. The script decompiles the entire base APK into a temporary directory, applies the package and bridge changes, merges native libraries, rebuilds it, and removes the temporary source afterward.
 
 ## Install and use
@@ -81,3 +87,11 @@ No SmartPlus username, password, token, server address, door MAC, or relay confi
 - Akuvox's original signing key is unavailable, so features restricted to its certificate cannot be preserved.
 
 Use this only with a building and account you are authorized to access.
+
+## F-Droid repository
+
+Production-signed phone releases are published through a self-hosted F-Droid
+repository at `https://colonelpanic8.github.io/akuvox-wear/fdroid/repo`. See
+[`docs/fdroid.md`](docs/fdroid.md) for the release, signing, and GitHub Pages
+setup. This is not an official F-Droid.org package and contains the non-free
+components described above.

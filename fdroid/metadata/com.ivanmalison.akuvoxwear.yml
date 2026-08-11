@@ -1,0 +1,22 @@
+Categories:
+  - Security
+License: Unknown
+AuthorName: Ivan Malison
+WebSite: https://colonelpanic8.github.io/akuvox-wear/
+SourceCode: https://github.com/colonelpanic8/akuvox-wear
+IssueTracker: https://github.com/colonelpanic8/akuvox-wear/issues
+
+AntiFeatures:
+  NonFreeDep:
+    en-US: >-
+      The generated phone APK incorporates the proprietary Akuvox SmartPlus
+      application, and phone-to-watch messaging uses Google Play services.
+  NonFreeNet:
+    en-US: >-
+      Door access requires an Akuvox SmartPlus account and Akuvox's proprietary
+      cloud service.
+
+# Localized listing text and changelogs live in fastlane/metadata/android/.
+# Releases are binary APKs produced from a user-supplied SmartPlus APK, so this
+# self-hosted repository has no source-build recipe or automatic update checker.
+UpdateCheckMode: None
