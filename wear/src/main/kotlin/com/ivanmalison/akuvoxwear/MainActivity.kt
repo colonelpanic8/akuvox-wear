@@ -1,5 +1,6 @@
 package com.ivanmalison.akuvoxwear
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -66,6 +67,13 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
                 }
             }
         }
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
     }
 
     override fun onStart() {
@@ -130,6 +138,12 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         }
     }
 
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_REQUEST_UNLOCK, false) != true) return
+        intent.removeExtra(EXTRA_REQUEST_UNLOCK)
+        requestUnlock()
+    }
+
     @Suppress("DEPRECATION")
     private fun vibrate(success: Boolean) {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -152,5 +166,9 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         data object Sending : UnlockState { override val message = "Asking phone" }
         data class Success(override val message: String) : UnlockState
         data class Failure(override val message: String) : UnlockState
+    }
+
+    companion object {
+        const val EXTRA_REQUEST_UNLOCK = "com.ivanmalison.akuvoxwear.REQUEST_UNLOCK"
     }
 }

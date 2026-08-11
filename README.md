@@ -63,6 +63,10 @@ The proprietary APK and generated decompilation are local build inputs and are d
 
 5. Keep the watch paired to the phone. Open **Unlock** on the watch and press the button.
 
+   For one-tap access from the watch face, add the **SmartPlus Unlock** tile to
+   the Wear OS tile carousel. Its Unlock button opens the companion activity
+   and sends the request immediately.
+
 The original Play Store SmartPlus app and the clone can coexist because they have different package IDs. Their sessions and local settings are independent.
 
 ## How it works

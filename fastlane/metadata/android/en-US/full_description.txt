@@ -7,6 +7,9 @@ The watch sends an app-private Wear Data Layer message to the paired phone, and
 the phone asks SmartPlus's existing authenticated request layer to open the
 door. The watch does not need its own Wi-Fi or cellular connection.
 
+Add the SmartPlus Unlock tile to the Wear OS carousel for one-tap access from
+the watch face.
+
 This repository contains build and injection tooling, not Akuvox's proprietary
 application. Release APKs are produced locally from a user-supplied SmartPlus
 APK and contain proprietary Akuvox code. An authorized SmartPlus account and

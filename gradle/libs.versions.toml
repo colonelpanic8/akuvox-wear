@@ -8,6 +8,8 @@ coreKtx = "1.17.0"
 lifecycle = "2.10.0"
 playServicesWearable = "20.0.1"
 wearCompose = "1.6.2"
+wearProtoLayout = "1.4.2"
+wearTiles = "1.6.2"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -29,6 +31,9 @@ play-services-tasks-compat = { module = "com.google.android.gms:play-services-ta
 wear-compose-foundation = { module = "androidx.wear.compose:compose-foundation", version.ref = "wearCompose" }
 wear-compose-material3 = { module = "androidx.wear.compose:compose-material3", version.ref = "wearCompose" }
 wear-compose-ui-tooling = { module = "androidx.wear.compose:compose-ui-tooling", version.ref = "wearCompose" }
+wear-protolayout = { module = "androidx.wear.protolayout:protolayout", version.ref = "wearProtoLayout" }
+wear-protolayout-material3 = { module = "androidx.wear.protolayout:protolayout-material3", version.ref = "wearProtoLayout" }
+wear-tiles = { module = "androidx.wear.tiles:tiles", version.ref = "wearTiles" }
 junit = { module = "junit:junit", version = "4.13.2" }
 json = { module = "org.json:json", version = "20260719" }
 

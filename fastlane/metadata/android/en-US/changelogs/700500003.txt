@@ -1,4 +1,5 @@
 Initial SmartPlus Wear bridge release based on SmartPlus 7.50.0003.
 
 Adds a paired Wear OS unlock button that uses the phone app's authenticated
-session and first compatible favorite door.
+session and first compatible favorite door. The watch app also provides a
+one-tap SmartPlus Unlock tile for the Wear OS home-screen carousel.
