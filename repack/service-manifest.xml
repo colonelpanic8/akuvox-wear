@@ -1,0 +1,11 @@
+        <service
+            android:name="com.ivanmalison.akuvoxwear.bridge.SmartPlusWearService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/akuvox/unlock/request"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
