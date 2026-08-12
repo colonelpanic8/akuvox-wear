@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -90,6 +91,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         if (messageEvent.path != WireProtocol.UNLOCK_RESULT_PATH) return
         val result = runCatching { WireProtocol.decodeResult(messageEvent.data) }.getOrNull() ?: return
         if (result.requestId != pendingRequestId) return
+        Log.i(TAG, "Received phone result: ${if (result.successful) "success" else "failure"}")
         runOnUiThread {
             timeoutJob?.cancel()
             pendingRequestId = null
@@ -101,25 +103,27 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
     private fun requestUnlock() {
         if (state is UnlockState.Sending) return
         state = UnlockState.Sending
+        Log.i(TAG, "Starting unlock request")
         val requestId = WireProtocol.newRequestId()
         pendingRequestId = requestId
         lifecycleScope.launch {
-            val node = runCatching {
+            val nodes = runCatching {
                 Wearable.getNodeClient(this@MainActivity).connectedNodes.await()
-                    .sortedByDescending { it.isNearby }
-                    .firstOrNull()
-            }.getOrNull()
+            }.onFailure { Log.e(TAG, "Unable to query connected phone", it) }.getOrNull()
+            val node = nodes?.sortedByDescending { it.isNearby }?.firstOrNull()
             if (node == null) {
+                Log.w(TAG, "No connected phone node")
                 pendingRequestId = null
                 state = UnlockState.Failure("Phone not connected")
                 vibrate(false)
                 return@launch
             }
+            Log.i(TAG, "Sending request to phone; connected nodes=${nodes.size}, nearby=${node.isNearby}")
             val sent = runCatching {
                 Wearable.getMessageClient(this@MainActivity)
                     .sendMessage(node.id, WireProtocol.UNLOCK_REQUEST_PATH, WireProtocol.encodeRequest(requestId))
                     .await()
-            }.isSuccess
+            }.onFailure { Log.e(TAG, "Unable to send request to phone", it) }.isSuccess
             if (!sent) {
                 pendingRequestId = null
                 state = UnlockState.Failure("Could not reach phone")
@@ -130,6 +134,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             timeoutJob = launch {
                 delay(15_000)
                 if (pendingRequestId == requestId) {
+                    Log.w(TAG, "Timed out waiting for phone result")
                     pendingRequestId = null
                     state = UnlockState.Failure("SmartPlus timed out")
                     vibrate(false)
@@ -169,6 +174,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
     }
 
     companion object {
+        private const val TAG = "SmartPlusWear"
         const val EXTRA_REQUEST_UNLOCK = "com.ivanmalison.akuvoxwear.REQUEST_UNLOCK"
     }
 }

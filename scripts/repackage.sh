@@ -65,7 +65,7 @@ apktool d -f "$base_apk" -o "$decoded_base"
 apktool d -f -r "$payload_apk" -o "$decoded_payload"
 
 while IFS= read -r split_apk; do
-  if unzip -Z1 "$split_apk" | grep -qE '^lib/[^/]+/[^/]+\.so$'; then
+  if unzip -Z1 "$split_apk" | awk '/^lib\/[^/]+\/[^/]+\.so$/ { found = 1 } END { exit !found }'; then
     echo "Merging native libraries from $(basename "$split_apk")"
     unzip -q -o "$split_apk" 'lib/*' -d "$decoded_base"
   fi
@@ -77,11 +77,33 @@ if ! find "$decoded_base/lib" -type f -name '*.so' -print -quit 2>/dev/null | gr
 fi
 
 manifest="$decoded_base/AndroidManifest.xml"
+apktool_config="$decoded_base/apktool.yml"
 sed -i \
   -e 's/ android:requiredSplitTypes="[^"]*"//' \
   -e 's/android:extractNativeLibs="false"/android:extractNativeLibs="true"/' \
   -e "s/$original_package/$replacement_package/g" \
   "$manifest"
+
+if [[ -n "${SMARTPLUS_WEAR_VERSION_CODE:-}" ]]; then
+  [[ "$SMARTPLUS_WEAR_VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || {
+    echo "SMARTPLUS_WEAR_VERSION_CODE must be a positive integer" >&2
+    exit 1
+  }
+  sed -i -E \
+    "s/android:versionCode=\"[0-9]+\"/android:versionCode=\"$SMARTPLUS_WEAR_VERSION_CODE\"/" \
+    "$manifest"
+  sed -i -E \
+    "s/^([[:space:]]*versionCode:).*/\\1 $SMARTPLUS_WEAR_VERSION_CODE/" \
+    "$apktool_config"
+fi
+if [[ -n "${SMARTPLUS_WEAR_VERSION_NAME:-}" ]]; then
+  sed -i -E \
+    "s/android:versionName=\"[^\"]*\"/android:versionName=\"$SMARTPLUS_WEAR_VERSION_NAME\"/" \
+    "$manifest"
+  sed -i -E \
+    "s/^([[:space:]]*versionName:).*/\\1 $SMARTPLUS_WEAR_VERSION_NAME/" \
+    "$apktool_config"
+fi
 
 service_fragment="$(<"$project_dir/repack/service-manifest.xml")"
 SERVICE_FRAGMENT="$service_fragment" perl -0pi -e \

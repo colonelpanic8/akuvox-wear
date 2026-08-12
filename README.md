@@ -1,8 +1,10 @@
 # SmartPlus Wear Bridge
 
-This project produces a modified Akuvox SmartPlus phone app and a matching Wear OS unlock app. The phone build retains SmartPlus's normal login, building setup, and door data under a separate Android application ID, `com.ivanmalison.akuvoxwear`. An injected service receives an unlock request from the paired watch and asks SmartPlus's own authenticated request layer to open the first compatible favorite door.
+This project produces a modified Akuvox SmartPlus phone app and a matching Wear OS unlock app. The phone build retains SmartPlus's normal login, building setup, and door data under a separate Android application ID, `com.ivanmalison.akuvoxwear`. An injected service receives an unlock request from the paired watch and asks SmartPlus's own authenticated request layer to open the first compatible favorite door. If there is no compatible favorite and exactly one remote-unlock door is available, it uses that door automatically.
 
 The watch does not need Wi-Fi or LTE. Its request travels over the Wear OS Data Layer to the paired phone, and the phone uses its Internet connection for the SmartPlus request.
+
+The phone screen may remain locked. The bridge runs headlessly and briefly holds the phone awake while the request is in progress. As with other Android apps, the phone must have been unlocked once after a reboot before SmartPlus's credential-encrypted login data is available.
 
 ## Status
 
@@ -15,7 +17,7 @@ The repackaging pipeline has successfully rebuilt SmartPlus 7.50.0003 as a singl
 - both APK signatures and phone APK alignment are valid; and
 - the bridge payload has no duplicate classes with this SmartPlus version.
 
-A real phone/watch/building unlock is still required before calling the integration proven. A modified signature or changed package name can affect Firebase push notifications, Google-backed features, or any server-side integrity checks even if normal login and unlock work.
+A real phone/watch/building unlock has succeeded through the tile while the phone was locked and dozing. A modified signature or changed package name can still affect Firebase push notifications, Google-backed features, or other server-side integrity checks.
 
 ## Build from the installed phone app
 
@@ -43,6 +45,10 @@ For public releases, set `ANDROID_KEYSTORE_FILE` (or
 the script intentionally falls back to the local Android debug key for device
 testing only.
 
+Set `SMARTPLUS_WEAR_VERSION_CODE` and `SMARTPLUS_WEAR_VERSION_NAME` when a
+repackaged release must update an existing clone without waiting for a newer
+upstream SmartPlus version.
+
 The proprietary APK and generated decompilation are local build inputs and are deliberately excluded from Git. The script decompiles the entire base APK into a temporary directory, applies the package and bridge changes, merges native libraries, rebuilds it, and removes the temporary source afterward.
 
 ## Install and use
@@ -54,7 +60,7 @@ The proprietary APK and generated decompilation are local build inputs and are d
    ```
 
 2. Open **SmartPlus Wear** on the phone and log in through the normal SmartPlus UI. This clone has separate app storage, so it cannot reuse the original app's login automatically.
-3. In the cloned app, mark the desired remote-unlock relay as a favorite. The bridge selects the first favorite conventional door whose relay type is `relay` or `security_relay`.
+3. If the account has multiple doors, mark the desired remote-unlock relay as a favorite. The bridge selects the first compatible favorite. If the account exposes exactly one compatible door, no favorite is required.
 4. Enable ADB debugging on the watch, connect it, and install the watch APK:
 
    ```sh
@@ -75,7 +81,7 @@ The original Play Store SmartPlus app and the clone can coexist because they hav
 Wear button
     -> encrypted Wear Data Layer message
     -> injected service in the cloned SmartPlus phone process
-    -> first compatible favorite relay from SmartPlus's database
+    -> first compatible favorite, or the sole available relay
     -> SmartPlus's existing authenticated open-door request
     -> result returned to the watch
 ```
@@ -86,7 +92,7 @@ No SmartPlus username, password, token, server address, door MAC, or relay confi
 
 - The bridge currently targets the reverse-engineered internals of SmartPlus 7.50.0003. Future versions may rename or change those classes.
 - Only native architectures present in the supplied APK splits can be included. Pulling the installed APK set from the target phone is the safest input.
-- The selected favorite must be a conventional remote-unlock relay (`type == 1001`), not a Bluetooth-only or third-party smart lock.
+- Only conventional remote-unlock relays are supported, not Bluetooth-only or third-party smart locks. When multiple compatible relays exist, one must be marked as a favorite; the bridge will not choose a physical door at random.
 - Rebuilding on another machine uses that machine's Android debug key. Phone and watch builds must always be signed by the same key, and updates must reuse the original build key.
 - Akuvox's original signing key is unavailable, so features restricted to its certificate cannot be preserved.
 
