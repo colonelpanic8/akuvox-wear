@@ -1,0 +1,5 @@
+Fixes the phone-side crash that made Wear unlock requests time out.
+
+Unlock now works while the phone is locked or dozing, handles SmartPlus Local
+and security_relay door types, and falls back to the only remote-unlock door
+when no favorite is set.

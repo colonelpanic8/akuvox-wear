@@ -84,6 +84,22 @@ sed -i \
   -e "s/$original_package/$replacement_package/g" \
   "$manifest"
 
+# Several bundled SDK screens (QR scan, the Aliyun pickers, the log viewers) are
+# pinned to portrait, and nothing declares itself resizable. Drop the locks and
+# opt the whole application in to resizing so the window follows the display.
+echo "Removing portrait locks and size limits for large screens"
+sed -i -E \
+  -e 's/ android:screenOrientation="[^"]*"//g' \
+  -e 's/ android:resizeableActivity="[^"]*"//g' \
+  -e 's/ android:(max|min)AspectRatio="[^"]*"//g' \
+  "$manifest"
+perl -0pi -e 's#<supports-screens\b[^>]*/>\s*##g; s#<supports-screens\b.*?</supports-screens>\s*##gs' "$manifest"
+perl -0pi -e 's#<application\b#<application android:resizeableActivity="true"#' "$manifest"
+if grep -E -q 'android:screenOrientation=|android:resizeableActivity="false"' "$manifest"; then
+  echo "large-screen manifest patch left a restriction behind" >&2
+  exit 1
+fi
+
 if [[ -n "${SMARTPLUS_WEAR_VERSION_CODE:-}" ]]; then
   [[ "$SMARTPLUS_WEAR_VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || {
     echo "SMARTPLUS_WEAR_VERSION_CODE must be a positive integer" >&2
@@ -118,6 +134,17 @@ fi
 while IFS= read -r smali_file; do
   sed -i "s/$original_package/$replacement_package/g" "$smali_file"
 done < <(grep -rl --include='*.smali' "$original_package" "$decoded_base"/smali* || true)
+
+# The manifest is not enough: SmartPlus also re-locks orientation at runtime from
+# its base activities. Dropping the calls leaves each activity in the orientation
+# the device chooses.
+orientation_call=";->setRequestedOrientation(I)V"
+orientation_calls=0
+while IFS= read -r smali_file; do
+  orientation_calls=$((orientation_calls + $(grep -c -F -e "$orientation_call" "$smali_file")))
+  sed -i -e "/$orientation_call/d" "$smali_file"
+done < <(grep -rl -F --include='*.smali' -e "$orientation_call" "$decoded_base"/smali* || true)
+echo "Removed $orientation_calls runtime orientation requests"
 
 find "$decoded_base"/smali* -type f -printf '%P\n' | sort -u > "$work_dir/base-classes"
 find "$decoded_payload"/smali* -type f -printf '%P\n' | sort -u > "$work_dir/payload-classes"
