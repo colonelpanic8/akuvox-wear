@@ -10,6 +10,10 @@ door. The watch does not need its own Wi-Fi or cellular connection.
 Add the SmartPlus Unlock tile to the Wear OS carousel for one-tap access from
 the watch face.
 
+The rebuilt phone app also drops SmartPlus's portrait lock and window-size
+limits, so it fills the screen on foldables and tablets instead of running
+letterboxed at phone size.
+
 This repository contains build and injection tooling, not Akuvox's proprietary
 application. Release APKs are produced locally from a user-supplied SmartPlus
 APK and contain proprietary Akuvox code. An authorized SmartPlus account and

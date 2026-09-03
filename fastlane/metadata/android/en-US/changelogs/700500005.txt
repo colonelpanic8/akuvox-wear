@@ -1,0 +1,5 @@
+Fixes the cramped, portrait-locked layout on foldables and tablets.
+
+The rebuilt app is marked resizable, the portrait locks are removed from the
+bundled SDK screens, and the runtime orientation requests are dropped, so the
+app follows the display instead of staying in a phone-shaped portrait window.

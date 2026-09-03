@@ -14,8 +14,9 @@ The repackaging pipeline has successfully rebuilt SmartPlus 7.50.0003 as a singl
 - the injected Wear listener is present;
 - the original login activities remain present;
 - the phone and watch APKs use the same signing certificate;
-- both APK signatures and phone APK alignment are valid; and
-- the bridge payload has no duplicate classes with this SmartPlus version.
+- both APK signatures and phone APK alignment are valid;
+- the bridge payload has no duplicate classes with this SmartPlus version; and
+- no activity is left portrait-locked or non-resizable.
 
 A real phone/watch/building unlock has succeeded through the tile while the phone was locked and dozing. A modified signature or changed package name can still affect Firebase push notifications, Google-backed features, or other server-side integrity checks.
 
@@ -74,6 +75,23 @@ The proprietary APK and generated decompilation are local build inputs and are d
    and sends the request immediately.
 
 The original Play Store SmartPlus app and the clone can coexist because they have different package IDs. Their sessions and local settings are independent.
+
+## Large screens
+
+The repackaging step relaxes the orientation and sizing restrictions that make
+SmartPlus behave like a phone-only app on a foldable's inner display or a
+tablet. In SmartPlus 7.50.0003 that means:
+
+- ten activities carry `android:screenOrientation="portrait"` — the QR scanner,
+  the Aliyun country pickers, and the Tiandy log and network-diagnostic screens;
+- no component declares `android:resizeableActivity`, so the application is
+  marked resizable explicitly; and
+- twenty-two `setRequestedOrientation` calls re-lock orientation at runtime,
+  from Akuvox's call, monitor, and web activities as well as the bundled
+  permission, Flutter, and screen-utility libraries.
+
+SmartPlus's own layouts were drawn for phone widths, so a wide window shows
+those layouts stretched to fit rather than a tablet-specific design.
 
 ## How it works
 
