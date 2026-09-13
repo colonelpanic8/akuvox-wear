@@ -1,0 +1,6 @@
+Adds a SmartPlus Unlock complication for Wear OS watch faces.
+
+Place it in any watch face complication slot to unlock without opening the app
+or swiping to the tile carousel. It supports the short text, long text,
+monochromatic image, and small image slot types. The phone bridge is unchanged
+from wear.3.

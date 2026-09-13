@@ -74,6 +74,12 @@ The proprietary APK and generated decompilation are local build inputs and are d
    the Wear OS tile carousel. Its Unlock button opens the companion activity
    and sends the request immediately.
 
+   The same one-tap action is also available as a watch face complication.
+   Edit the watch face, pick a complication slot, and choose **SmartPlus
+   Unlock** under the app's name. It renders in the short text, long text,
+   monochromatic image, and small image slot types, and tapping it opens the
+   companion activity and sends the request.
+
 The original Play Store SmartPlus app and the clone can coexist because they have different package IDs. Their sessions and local settings are independent.
 
 ## Large screens
@@ -96,7 +102,7 @@ those layouts stretched to fit rather than a tablet-specific design.
 ## How it works
 
 ```text
-Wear button
+Wear button, tile, or complication tap
     -> encrypted Wear Data Layer message
     -> injected service in the cloned SmartPlus phone process
     -> first compatible favorite, or the sole available relay
