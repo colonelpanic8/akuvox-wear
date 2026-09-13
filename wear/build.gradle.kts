@@ -14,8 +14,8 @@ android {
         applicationId = "com.ivanmalison.akuvoxwear"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.2.1"
+        versionCode = 4
+        versionName = "0.3.0"
     }
 
     compileOptions {
@@ -51,5 +51,6 @@ dependencies {
     implementation(libs.wear.protolayout)
     implementation(libs.wear.protolayout.material3)
     implementation(libs.wear.tiles)
+    implementation(libs.wear.watchface.complications.data.source.ktx)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

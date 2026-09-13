@@ -2,4 +2,8 @@
     <string name="app_name">Unlock</string>
     <string name="tile_name">SmartPlus Unlock</string>
     <string name="tile_description">Unlock your favorite SmartPlus door from the tile carousel</string>
+    <string name="complication_name">SmartPlus Unlock</string>
+    <string name="complication_description">Unlock your favorite SmartPlus door from the watch face</string>
+    <string name="unlock_label">Unlock</string>
+    <string name="unlock_title">SmartPlus</string>
 </resources>
