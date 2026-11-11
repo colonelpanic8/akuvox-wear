@@ -1,0 +1,6 @@
+Adds Unlock + pin, which opens the door and sets a Mova reminder.
+
+The watch app, the tile, and a new SmartPlus Unlock + Pin complication can
+unlock and ask Mova on the phone to pin "Bring scooter in". The reminder
+alerts after 10 minutes and every 10 minutes after that until it is marked
+Done. This needs Mova 7.9.0 or later on the phone.

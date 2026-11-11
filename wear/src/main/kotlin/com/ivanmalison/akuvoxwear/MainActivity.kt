@@ -12,8 +12,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -23,12 +23,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.ivanmalison.akuvoxwear.protocol.WireProtocol
+import com.ivanmalison.akuvoxwear.protocol.WireProtocol.PinOutcome
+import com.ivanmalison.akuvoxwear.protocol.WireProtocol.UnlockRequest
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -43,26 +46,40 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
+                val idle = state !is UnlockState.Sending
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(18.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Button(
-                        enabled = state !is UnlockState.Sending,
-                        onClick = ::requestUnlock,
-                        modifier = Modifier.size(124.dp),
+                        enabled = idle,
+                        onClick = { requestUnlock(armPin = false) },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            text = if (state is UnlockState.Sending) "Sending…" else "Unlock",
+                            text = if (idle) "Unlock" else "Sending…",
                             textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                    FilledTonalButton(
+                        enabled = idle,
+                        onClick = { requestUnlock(armPin = true) },
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    ) {
+                        Text(
+                            text = "Unlock + pin",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.titleMedium,
                         )
                     }
                     Text(
                         text = state.message,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 12.dp),
+                        modifier = Modifier.padding(top = 8.dp),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -96,14 +113,15 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             timeoutJob?.cancel()
             pendingRequestId = null
             state = if (result.successful) UnlockState.Success(result.message) else UnlockState.Failure(result.message)
-            vibrate(result.successful)
+            // An open door with no reminder buzzes as a failure, since the reminder was the point.
+            vibrate(result.successful && result.pin != PinOutcome.FAILED)
         }
     }
 
-    private fun requestUnlock() {
+    private fun requestUnlock(armPin: Boolean) {
         if (state is UnlockState.Sending) return
         state = UnlockState.Sending
-        Log.i(TAG, "Starting unlock request")
+        Log.i(TAG, "Starting unlock request, pin=$armPin")
         val requestId = WireProtocol.newRequestId()
         pendingRequestId = requestId
         lifecycleScope.launch {
@@ -121,7 +139,11 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             Log.i(TAG, "Sending request to phone; connected nodes=${nodes.size}, nearby=${node.isNearby}")
             val sent = runCatching {
                 Wearable.getMessageClient(this@MainActivity)
-                    .sendMessage(node.id, WireProtocol.UNLOCK_REQUEST_PATH, WireProtocol.encodeRequest(requestId))
+                    .sendMessage(
+                        node.id,
+                        WireProtocol.UNLOCK_REQUEST_PATH,
+                        WireProtocol.encodeRequest(UnlockRequest(requestId, armPin)),
+                    )
                     .await()
             }.onFailure { Log.e(TAG, "Unable to send request to phone", it) }.isSuccess
             if (!sent) {
@@ -146,7 +168,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
     private fun handleIntent(intent: Intent?) {
         if (intent?.getBooleanExtra(EXTRA_REQUEST_UNLOCK, false) != true) return
         intent.removeExtra(EXTRA_REQUEST_UNLOCK)
-        requestUnlock()
+        requestUnlock(armPin = intent.getBooleanExtra(EXTRA_ARM_PIN, false))
     }
 
     @Suppress("DEPRECATION")
@@ -176,5 +198,6 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
     companion object {
         private const val TAG = "SmartPlusWear"
         const val EXTRA_REQUEST_UNLOCK = "com.ivanmalison.akuvoxwear.REQUEST_UNLOCK"
+        const val EXTRA_ARM_PIN = "com.ivanmalison.akuvoxwear.ARM_PIN"
     }
 }

@@ -10,6 +10,9 @@ door. The watch does not need its own Wi-Fi or cellular connection.
 Add the SmartPlus Unlock tile to the Wear OS carousel, or the SmartPlus Unlock
 complication to a watch face slot, for one-tap access without opening the app.
 
+Unlock + pin also asks the Mova app on the phone to pin a "Bring scooter in"
+reminder, which alerts every 10 minutes until it is marked Done.
+
 The rebuilt phone app also drops SmartPlus's portrait lock and window-size
 limits, so it fills the screen on foldables and tablets instead of running
 letterboxed at phone size.

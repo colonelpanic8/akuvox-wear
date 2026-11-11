@@ -1,5 +1,7 @@
 package com.ivanmalison.akuvoxwear.bridge;
 
+import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
@@ -28,6 +30,15 @@ public final class SmartPlusWearService extends WearableListenerService {
     private static final long UNLOCK_TIMEOUT_MS = 12_000;
     private static final long WAKE_LOCK_TIMEOUT_MS = UNLOCK_TIMEOUT_MS + 3_000;
 
+    private static final String PIN_NOT_REQUESTED = "none";
+    private static final String PIN_ARMED = "armed";
+    private static final String PIN_FAILED = "failed";
+
+    private static final Uri MOVA_PROVIDER = Uri.parse("content://com.colonelpanic.mova.provider");
+    private static final String PIN_TITLE = "Bring scooter in";
+    private static final String PIN_KEY = "akuvox-wear-unlock";
+    private static final int PIN_NAG_MINUTES = 10;
+
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -36,17 +47,17 @@ public final class SmartPlusWearService extends WearableListenerService {
             return;
         }
 
-        String requestId = new String(event.getData(), StandardCharsets.UTF_8);
-        try {
-            UUID.fromString(requestId);
-        } catch (IllegalArgumentException exception) {
+        String[] parts = new String(event.getData(), StandardCharsets.UTF_8).split("\0", -1);
+        String requestId = parts[0];
+        if (!isValidRequest(parts)) {
             Log.w(TAG, "Rejected malformed request from watch");
-            sendResult(event.getSourceNodeId(), requestId, false, "Invalid watch request");
+            sendResult(event.getSourceNodeId(), requestId, false, PIN_NOT_REQUESTED, "Invalid watch request");
             return;
         }
+        boolean armPin = Boolean.parseBoolean(parts[1]);
 
         String sourceNodeId = event.getSourceNodeId();
-        Log.i(TAG, "Received unlock request from watch");
+        Log.i(TAG, "Received unlock request from watch" + (armPin ? " with pin" : ""));
         AtomicBoolean completed = new AtomicBoolean(false);
         PowerManager.WakeLock wakeLock = acquireWakeLock();
         mainHandler.postDelayed(
@@ -56,14 +67,32 @@ public final class SmartPlusWearService extends WearableListenerService {
                         sourceNodeId,
                         requestId,
                         false,
+                        PIN_NOT_REQUESTED,
                         "SmartPlus timed out"
                 ),
                 UNLOCK_TIMEOUT_MS
         );
         mainHandler.post(() -> {
             try {
-                requestFavoriteDoorUnlock((success, message) ->
-                        complete(completed, wakeLock, sourceNodeId, requestId, success, message));
+                requestFavoriteDoorUnlock((success, message) -> {
+                    if (!success || !armPin) {
+                        complete(completed, wakeLock, sourceNodeId, requestId, success, PIN_NOT_REQUESTED, message);
+                        return;
+                    }
+                    // Mova may need a cold start, so stay off the main thread.
+                    new Thread(() -> {
+                        boolean armed = armMovaPin();
+                        complete(
+                                completed,
+                                wakeLock,
+                                sourceNodeId,
+                                requestId,
+                                true,
+                                armed ? PIN_ARMED : PIN_FAILED,
+                                armed ? "Door opened, reminder set" : "Door opened, reminder not set"
+                        );
+                    }, TAG + "Pin").start();
+                });
             } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
                 Log.e(TAG, "Unable to request SmartPlus unlock", exception);
                 complete(
@@ -72,10 +101,43 @@ public final class SmartPlusWearService extends WearableListenerService {
                         sourceNodeId,
                         requestId,
                         false,
+                        PIN_NOT_REQUESTED,
                         "SmartPlus bridge failed"
                 );
             }
         });
+    }
+
+    private static boolean isValidRequest(String[] parts) {
+        if (parts.length != 2 || !("true".equals(parts[1]) || "false".equals(parts[1]))) {
+            return false;
+        }
+        try {
+            UUID.fromString(parts[0]);
+            return true;
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
+    }
+
+    private boolean armMovaPin() {
+        Bundle extras = new Bundle();
+        extras.putString("title", PIN_TITLE);
+        extras.putInt("escalate_minutes", PIN_NAG_MINUTES);
+        extras.putInt("nag_minutes", PIN_NAG_MINUTES);
+        extras.putString("key", PIN_KEY);
+        try {
+            Bundle result = getContentResolver().call(MOVA_PROVIDER, "arm_pin", null, extras);
+            boolean armed = result != null && "completed".equals(result.getString("status"));
+            if (!armed) {
+                Log.w(TAG, "Mova did not arm the pin: "
+                        + (result == null ? "no result" : result.getString("message")));
+            }
+            return armed;
+        } catch (RuntimeException exception) {
+            Log.e(TAG, "Unable to ask Mova for a pin", exception);
+            return false;
+        }
     }
 
     private PowerManager.WakeLock acquireWakeLock() {
@@ -298,12 +360,13 @@ public final class SmartPlusWearService extends WearableListenerService {
             String nodeId,
             String requestId,
             boolean success,
+            String pin,
             String message
     ) {
         if (completed.compareAndSet(false, true)) {
-            Log.i(TAG, "Completing watch request: " + (success ? "success" : "failure"));
+            Log.i(TAG, "Completing watch request: " + (success ? "success" : "failure") + ", pin " + pin);
             try {
-                sendResult(nodeId, requestId, success, message);
+                sendResult(nodeId, requestId, success, pin, message);
             } finally {
                 if (wakeLock != null && wakeLock.isHeld()) {
                     wakeLock.release();
@@ -312,13 +375,13 @@ public final class SmartPlusWearService extends WearableListenerService {
         }
     }
 
-    private void sendResult(String nodeId, String requestId, boolean success, String message) {
+    private void sendResult(String nodeId, String requestId, boolean success, String pin, String message) {
         String safeMessage = fallback(message, success ? "Door opened" : "Unlock failed")
                 .replace('\0', ' ');
         if (safeMessage.length() > 240) {
             safeMessage = safeMessage.substring(0, 240);
         }
-        byte[] payload = (requestId + '\0' + success + '\0' + safeMessage)
+        byte[] payload = (requestId + '\0' + success + '\0' + pin + '\0' + safeMessage)
                 .getBytes(StandardCharsets.UTF_8);
         try {
             Wearable.getMessageClient(this).sendMessage(nodeId, RESULT_PATH, payload)

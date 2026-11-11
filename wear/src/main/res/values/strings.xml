@@ -4,6 +4,9 @@
     <string name="tile_description">Unlock your favorite SmartPlus door from the tile carousel</string>
     <string name="complication_name">SmartPlus Unlock</string>
     <string name="complication_description">Unlock your favorite SmartPlus door from the watch face</string>
+    <string name="complication_pin_name">SmartPlus Unlock + Pin</string>
+    <string name="complication_pin_description">Unlock your favorite SmartPlus door and pin a reminder in Mova</string>
     <string name="unlock_label">Unlock</string>
+    <string name="unlock_pin_label">+ Pin</string>
     <string name="unlock_title">SmartPlus</string>
 </resources>
