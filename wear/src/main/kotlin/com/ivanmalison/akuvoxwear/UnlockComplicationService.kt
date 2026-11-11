@@ -16,7 +16,11 @@ import androidx.wear.watchface.complications.data.SmallImageType
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 
-class UnlockComplicationService : SuspendingComplicationDataSourceService() {
+class UnlockComplicationService : UnlockComplication(armPin = false)
+
+class UnlockWithPinComplicationService : UnlockComplication(armPin = true)
+
+abstract class UnlockComplication(private val armPin: Boolean) : SuspendingComplicationDataSourceService() {
     override fun getPreviewData(type: ComplicationType): ComplicationData? =
         unlockComplication(type, tapAction = null)
 
@@ -24,9 +28,15 @@ class UnlockComplicationService : SuspendingComplicationDataSourceService() {
         unlockComplication(request.complicationType, unlockTapAction())
 
     private fun unlockComplication(type: ComplicationType, tapAction: PendingIntent?): ComplicationData? {
-        val label = PlainComplicationText.Builder(getString(R.string.unlock_label)).build()
+        val label = PlainComplicationText
+            .Builder(getString(if (armPin) R.string.unlock_pin_label else R.string.unlock_label))
+            .build()
         val title = PlainComplicationText.Builder(getString(R.string.unlock_title)).build()
-        val description = PlainComplicationText.Builder(getString(R.string.complication_description)).build()
+        val description = PlainComplicationText
+            .Builder(
+                getString(if (armPin) R.string.complication_pin_description else R.string.complication_description),
+            )
+            .build()
         val monochromaticImage = MonochromaticImage
             .Builder(Icon.createWithResource(this, R.drawable.ic_unlock))
             .build()
@@ -67,9 +77,11 @@ class UnlockComplicationService : SuspendingComplicationDataSourceService() {
         val intent = Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(MainActivity.EXTRA_REQUEST_UNLOCK, true)
+            .putExtra(MainActivity.EXTRA_ARM_PIN, armPin)
         return PendingIntent.getActivity(
             this,
-            0,
+            // Extras do not distinguish PendingIntents, so each variant needs its own code.
+            if (armPin) 1 else 0,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

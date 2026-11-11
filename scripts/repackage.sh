@@ -125,6 +125,11 @@ service_fragment="$(<"$project_dir/repack/service-manifest.xml")"
 SERVICE_FRAGMENT="$service_fragment" perl -0pi -e \
   's#</application>#$ENV{SERVICE_FRAGMENT}\n    </application>#' "$manifest"
 
+# Android hides other apps' providers from a package that does not declare them.
+queries_fragment="$(<"$project_dir/repack/queries-manifest.xml")"
+QUERIES_FRAGMENT="$queries_fragment" perl -0pi -e \
+  's#[ \t]*<application#$ENV{QUERIES_FRAGMENT}\n$&#' "$manifest"
+
 if [[ -f "$decoded_base/res/values/strings.xml" ]]; then
   perl -0pi -e \
     's#(<string name="app_name"[^>]*>).*?(</string>)#$1SmartPlus Wear$2#' \

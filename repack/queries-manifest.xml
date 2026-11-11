@@ -1,0 +1,3 @@
+    <queries>
+        <provider android:authorities="com.colonelpanic.mova.provider" />
+    </queries>
