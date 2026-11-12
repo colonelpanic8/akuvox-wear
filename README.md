@@ -82,17 +82,26 @@ The proprietary APK and generated decompilation are local build inputs and are d
 
 ### Unlock + pin
 
-The watch app, the tile, and a second complication named **SmartPlus Unlock +
-Pin** offer an unlock that also sets a reminder. Once SmartPlus confirms the
+The watch app, the tile, a second complication named **SmartPlus Unlock +
+Pin**, and the phone's launcher shortcuts offer an unlock that also sets a
+reminder. Once SmartPlus confirms the
 door opened, the phone asks [Mova](https://github.com/colonelpanic8/mova) to arm
 a pin titled "Bring scooter in". The pin first alerts after 10 minutes and then
 every 10 minutes until it is marked Done in Mova. Unlocking with the pin again
 restarts that pin instead of adding a second one.
 
-This needs Mova 7.9.0 or later on the phone.
-The door still opens without one, and the watch then reports "Door opened,
-reminder not set" with the failure vibration. The title and interval are
-constants in `SmartPlusWearService`.
+This needs Mova 7.9.0 or later on the phone, with its notifications allowed.
+Mova only asks for that permission when a pin is armed from its own screen, so
+grant it in Android Settings if Mova has never shown a pin. The door still
+opens without a pin, and the watch then reports "Door opened, reminder not set"
+(or "turn on Mova notifications") with the failure vibration. The title and
+interval are constants in `DoorUnlocker`.
+
+### Phone shortcuts
+
+Long-press the SmartPlus Wear launcher icon for **Unlock door** and **Unlock +
+pin**, or drag either one to the home screen. They run the same unlock as the
+watch and report the result in a toast.
 
 The original Play Store SmartPlus app and the clone can coexist because they have different package IDs. Their sessions and local settings are independent.
 
@@ -119,6 +128,7 @@ those layouts stretched to fit rather than a tablet-specific design.
 Wear button, tile, or complication tap
     -> encrypted Wear Data Layer message
     -> injected service in the cloned SmartPlus phone process
+       (phone launcher shortcuts start here, through an injected activity)
     -> first compatible favorite, or the sole available relay
     -> SmartPlus's existing authenticated open-door request
     -> for Unlock + pin, a `call()` to Mova's content provider

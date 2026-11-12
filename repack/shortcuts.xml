@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="akuvox_wear_unlock"
+        android:shortcutShortLabel="@string/akuvox_wear_unlock">
+        <intent
+            android:action="com.ivanmalison.akuvoxwear.action.UNLOCK"
+            android:targetClass="com.ivanmalison.akuvoxwear.bridge.PhoneUnlockActivity"
+            android:targetPackage="com.ivanmalison.akuvoxwear" />
+    </shortcut>
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="akuvox_wear_unlock_pin"
+        android:shortcutShortLabel="@string/akuvox_wear_unlock_pin">
+        <intent
+            android:action="com.ivanmalison.akuvoxwear.action.UNLOCK_WITH_PIN"
+            android:targetClass="com.ivanmalison.akuvoxwear.bridge.PhoneUnlockActivity"
+            android:targetPackage="com.ivanmalison.akuvoxwear" />
+    </shortcut>
+</shortcuts>

@@ -1,0 +1,6 @@
+Adds Unlock door and Unlock + pin shortcuts to the phone launcher icon.
+
+Long-press SmartPlus Wear, or drag a shortcut to the home screen, to unlock
+from the phone with or without the Mova "Bring scooter in" reminder. When Mova
+refuses the pin because its notifications are off, the watch and phone now say
+so instead of only reporting that the reminder was not set.
