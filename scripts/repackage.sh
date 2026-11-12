@@ -121,20 +121,35 @@ if [[ -n "${SMARTPLUS_WEAR_VERSION_NAME:-}" ]]; then
     "$apktool_config"
 fi
 
-service_fragment="$(<"$project_dir/repack/service-manifest.xml")"
-SERVICE_FRAGMENT="$service_fragment" perl -0pi -e \
-  's#</application>#$ENV{SERVICE_FRAGMENT}\n    </application>#' "$manifest"
+components_fragment="$(<"$project_dir/repack/components-manifest.xml")"
+COMPONENTS_FRAGMENT="$components_fragment" perl -0pi -e \
+  's#</application>#$ENV{COMPONENTS_FRAGMENT}\n    </application>#' "$manifest"
+
+# Long-pressing the launcher icon offers the phone-side Unlock and Unlock + pin.
+mkdir -p "$decoded_base/res/xml"
+cp "$project_dir/repack/shortcuts.xml" "$decoded_base/res/xml/akuvox_wear_shortcuts.xml"
+perl -0pi -e \
+  's#(<activity\b(?:(?!</activity>|<activity\b).)*?android\.intent\.category\.LAUNCHER(?:(?!</activity>).)*?)(</activity>)#$1    <meta-data android:name="android.app.shortcuts" android:resource="\@xml/akuvox_wear_shortcuts"/>\n        $2#s' \
+  "$manifest"
+if [[ "$(grep -c 'android.app.shortcuts' "$manifest")" -ne 1 ]]; then
+  echo "could not attach the unlock shortcuts to exactly one launcher activity" >&2
+  exit 1
+fi
 
 # Android hides other apps' providers from a package that does not declare them.
 queries_fragment="$(<"$project_dir/repack/queries-manifest.xml")"
 QUERIES_FRAGMENT="$queries_fragment" perl -0pi -e \
   's#[ \t]*<application#$ENV{QUERIES_FRAGMENT}\n$&#' "$manifest"
 
-if [[ -f "$decoded_base/res/values/strings.xml" ]]; then
+strings_xml="$decoded_base/res/values/strings.xml"
+if [[ -f "$strings_xml" ]]; then
   perl -0pi -e \
     's#(<string name="app_name"[^>]*>).*?(</string>)#$1SmartPlus Wear$2#' \
-    "$decoded_base/res/values/strings.xml"
+    "$strings_xml"
 fi
+perl -0pi -e \
+  's#</resources>#    <string name="akuvox_wear_unlock">Unlock door</string>\n    <string name="akuvox_wear_unlock_pin">Unlock + pin</string>\n</resources>#' \
+  "$strings_xml"
 
 while IFS= read -r smali_file; do
   sed -i "s/$original_package/$replacement_package/g" "$smali_file"

@@ -9,3 +9,9 @@
                     android:scheme="wear" />
             </intent-filter>
         </service>
+        <activity
+            android:name="com.ivanmalison.akuvoxwear.bridge.PhoneUnlockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
