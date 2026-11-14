@@ -49,6 +49,9 @@ testing only.
 Set `SMARTPLUS_WEAR_VERSION_CODE` and `SMARTPLUS_WEAR_VERSION_NAME` when a
 repackaged release must update an existing clone without waiting for a newer
 upstream SmartPlus version.
+When `SMARTPLUS_WEAR_VERSION_NAME` ends in `-wear.N`, the watch APK gets
+versionCode `N`; Wear Updater derives the expected watch version from that tag
+suffix, so every release ships a watch APK carrying its own release number.
 
 The proprietary APK and generated decompilation are local build inputs and are deliberately excluded from Git. The script decompiles the entire base APK into a temporary directory, applies the package and bridge changes, merges native libraries, rebuilds it, and removes the temporary source afterward.
 

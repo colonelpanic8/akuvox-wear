@@ -52,8 +52,14 @@ if [[ -z "$base_apk" ]]; then
   exit 1
 fi
 
+# Wear Updater reads the watch versionCode from the release tag's wear.N suffix.
+gradle_args=()
+if [[ "${SMARTPLUS_WEAR_VERSION_NAME:-}" =~ -wear\.([1-9][0-9]*)$ ]]; then
+  gradle_args+=("-PwatchVersionCode=${BASH_REMATCH[1]}")
+fi
+
 echo "Building the Wear bridge and watch app"
-"$project_dir/gradlew" --no-daemon -p "$project_dir" :mobile:assembleDebug :wear:assembleDebug
+"$project_dir/gradlew" --no-daemon -p "$project_dir" "${gradle_args[@]}" :mobile:assembleDebug :wear:assembleDebug
 
 payload_apk="$project_dir/mobile/build/outputs/apk/debug/mobile-debug.apk"
 watch_apk="$project_dir/wear/build/outputs/apk/debug/wear-debug.apk"
