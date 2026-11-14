@@ -14,7 +14,7 @@ android {
         applicationId = "com.ivanmalison.akuvoxwear"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
+        versionCode = (findProperty("watchVersionCode") as String?)?.toInt() ?: 6
         versionName = "0.4.0"
     }
 
